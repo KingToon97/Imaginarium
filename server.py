@@ -35,10 +35,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .app import Imaginarium
-from .tax_compliance import PERSONAL_ALLOWANCE_PENCE
-
-TRADING_ALLOWANCE_PENCE = 100_000
-VAT_REGISTRATION_THRESHOLD_PENCE = 9_000_000
+from .tax_compliance import (
+    PERSONAL_ALLOWANCE_PENCE,
+    TRADING_ALLOWANCE_PENCE,
+    VAT_THRESHOLD_PENCE,
+)
 
 # ---------------------------------------------------------------------------
 # App state
@@ -388,7 +389,7 @@ def _revenue_summary(app: Imaginarium) -> dict[str, Any]:
     deductible_amount = expenses_tax_year if preferred_deduction == "expenses" else TRADING_ALLOWANCE_PENCE
     taxable_profit = max(0, gross_tax_year - deductible_amount)
     estimated_income_tax = int(max(0, taxable_profit - PERSONAL_ALLOWANCE_PENCE) * 0.2)
-    vat_threshold = VAT_REGISTRATION_THRESHOLD_PENCE
+    vat_threshold = VAT_THRESHOLD_PENCE
 
     registration_deadline = _deadline(10, 5, now)
     filing_deadline = _deadline(1, 31, now)

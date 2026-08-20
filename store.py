@@ -250,14 +250,12 @@ class Store:
 
     def gross_revenue(self) -> int:
         row = self.db.execute(
-            "SELECT COUNT(*) AS c, COALESCE(SUM(gross_pence),0) AS r FROM sales"
+            "SELECT COALESCE(SUM(gross_pence),0) AS r FROM sales"
         ).fetchone()
-        if int(row["c"]):
-            return int(row["r"])
-        row = self.db.execute(
-            "SELECT COALESCE(SUM(amount_pence),0) AS r FROM ledger WHERE kind='revenue'"
+        ledger_row = self.db.execute(
+            "SELECT COALESCE(SUM(amount_pence),0) AS r FROM ledger WHERE kind='revenue' AND memo NOT LIKE 'sale:%'"
         ).fetchone()
-        return int(row["r"])
+        return int(row["r"]) + int(ledger_row["r"])
 
     def add_expense_log(self, *, expense_id: str, date: str, category: str, amount_pence: int,
                         description: str, receipt_ref: str, justification: str,
