@@ -6,6 +6,7 @@ from .hydra import HydraProtocol
 from .morale import MoraleSystem
 from .self_improvement import SelfImprovementManager
 from .treasury import TreasuryPolicy
+from .tax_compliance import TaxCompliance
 from .agents.house import MrHouse
 from .agents.specialists import HAL, Cortana, GLaDOS, WALL_E, MrData, HK47, R2D2, Johnny5, TARS, K2SO, Skynet
 from .pipeline import BusinessPipeline
@@ -28,11 +29,13 @@ class Imaginarium:
         self.skynet=Skynet("skynet","Skynet","Strategy Agent",self.store)
         self.morale=MoraleSystem(self.store)
         self.treasury=TreasuryPolicy(self.store,float(os.getenv("IMAGINARIUM_REINVESTMENT_RATE","0.25")))
+        self.tax=TaxCompliance(self.store)
         self.hydra=HydraProtocol(self.store,self.authority)
         self.self_improvement=SelfImprovementManager(self.store)
         self.pipeline=BusinessPipeline(self)
 
     def execute(self,idea:dict)->dict: return self.pipeline.execute(idea)
+
 
 def demo():
     app=Imaginarium()

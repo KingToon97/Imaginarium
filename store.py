@@ -57,6 +57,18 @@ class Store:
             net_pence INTEGER,
             ts TEXT
         );
+        CREATE TABLE IF NOT EXISTS expenses(
+            id TEXT PRIMARY KEY,
+            date TEXT,
+            category TEXT,
+            amount_pence INTEGER,
+            description TEXT,
+            receipt_ref TEXT,
+            justification TEXT,
+            approved_by TEXT,
+            approved INTEGER DEFAULT 0,
+            created_at TEXT
+        );
         """)
         self.db.commit()
 
@@ -226,3 +238,39 @@ class Store:
                 "SELECT ts, agent_id, points, reason, reward FROM rewards ORDER BY ts DESC"
             ).fetchall()
         ]
+
+    def gross_revenue(self) -> int:
+        row = self.db.execute(
+            "SELECT COUNT(*) AS c, COALESCE(SUM(gross_pence),0) AS r FROM sales"
+        ).fetchone()
+        if int(row["c"]):
+            return int(row["r"])
+        row = self.db.execute(
+            "SELECT COALESCE(SUM(amount_pence),0) AS r FROM ledger WHERE kind='revenue'"
+        ).fetchone()
+        return int(row["r"])
+
+    def add_expense_log(self, *, expense_id: str, date: str, category: str, amount_pence: int,
+                        description: str, receipt_ref: str, justification: str,
+                        approved_by: str, approved: bool) -> None:
+        self.db.execute(
+            """INSERT INTO expenses(id,date,category,amount_pence,description,receipt_ref,
+               justification,approved_by,approved,created_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?)""",
+            (expense_id, date, category, amount_pence, description, receipt_ref, justification,
+             approved_by, int(approved), datetime.now(timezone.utc).isoformat()),
+        )
+        self.db.commit()
+
+    def list_expense_logs(self, approved_only: bool = True) -> list[dict]:
+        q = "SELECT * FROM expenses"
+        if approved_only:
+            q += " WHERE approved=1"
+        q += " ORDER BY date"
+        return [dict(row) for row in self.db.execute(q).fetchall()]
+
+    def total_approved_expenses_pence(self) -> int:
+        row = self.db.execute(
+            "SELECT COALESCE(SUM(amount_pence),0) AS t FROM expenses WHERE approved=1"
+        ).fetchone()
+        return int(row["t"])

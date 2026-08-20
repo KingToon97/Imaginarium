@@ -5,9 +5,21 @@ WSGI/ASGI-compatible host (Uvicorn, Gunicorn+Uvicorn, etc.).
 
 Endpoints
 ---------
-GET  /healthz          — liveness probe
-GET  /status           — treasury balance + agent roster
-POST /execute          — run a business idea through the pipeline
+GET  /healthz                         — liveness probe
+GET  /status                          — treasury balance + agent roster
+POST /execute                         — run a business idea through the pipeline
+GET  /api/v1/revenue/summary         — dashboard revenue summary
+GET  /api/v1/revenue/products        — dashboard product performance
+GET  /api/v1/revenue/forecast        — dashboard forecast and what-if scenarios
+GET  /api/v1/agents/roster           — dashboard agent morale and activity
+GET  /api/v1/activity/feed           — dashboard activity feed
+GET  /tax-status                      — current tax position and alerts
+GET  /tax-compliance/forecast         — Self Assessment forecast and filing requirements
+GET  /tax-compliance/expenses         — all approved expense logs and totals
+POST /tax-compliance/log-expense      — K-2SO authorised expense logging
+GET  /tax-compliance/efficiency       — tax efficiency recommendations
+GET  /tax-compliance/vat-forecast     — progress to £90k VAT threshold
+GET  /tax-compliance/audit-trail      — complete tax decision audit trail
 """
 from __future__ import annotations
 
@@ -557,8 +569,23 @@ def _forecast(app: Imaginarium) -> dict[str, Any]:
     }
 
 
+class LogExpenseRequest(BaseModel):
+    date: str = Field(..., description="Expense date (YYYY-MM-DD)")
+    category: str = Field(
+        ...,
+        description=(
+            "HMRC-allowable category: home_office | software | hosting | domain | "
+            "marketing | professional_dev | equipment"
+        ),
+    )
+    amount_pence: int = Field(..., gt=0, description="Expense amount in pence")
+    description: str = Field(..., description="Brief description of the expense")
+    receipt_ref: str = Field(..., description="Receipt identifier, URL, or reference number")
+    justification: str = Field(..., description="Business justification for the expense")
+
+
 # ---------------------------------------------------------------------------
-# Routes
+# Routes — core
 # ---------------------------------------------------------------------------
 
 
@@ -621,3 +648,148 @@ def activity_feed(
 ) -> JSONResponse:
     app = _get_app()
     return JSONResponse(_activity_feed(app, event_type=event_type, days=days, limit=limit))
+
+
+# ---------------------------------------------------------------------------
+# Routes — tax compliance
+# ---------------------------------------------------------------------------
+
+
+@server.get("/tax-status", tags=["tax"])
+def tax_status() -> JSONResponse:
+    """Current HMRC tax position: trading allowance used, phase, filing deadlines, alerts."""
+    app = _get_app()
+    return JSONResponse(app.tax.trading_allowance_status())
+
+
+@server.get("/tax-compliance/forecast", tags=["tax"])
+def tax_forecast() -> JSONResponse:
+    """12-month Self Assessment forecast: filing requirements, deadlines, estimated tax/NI due."""
+    app = _get_app()
+    return JSONResponse(app.tax.self_assessment_forecast())
+
+
+@server.get("/tax-compliance/expenses", tags=["tax"])
+def tax_expenses() -> JSONResponse:
+    """All K-2SO approved allowable expenses, totals, and comparison vs. trading allowance."""
+    app = _get_app()
+    return JSONResponse(app.tax.expenses_tracker())
+
+
+@server.post("/tax-compliance/log-expense", tags=["tax"])
+def tax_log_expense(req: LogExpenseRequest) -> JSONResponse:
+    """K-2SO authorised logging of a business expense.
+
+    K-2SO verifies the expense is a legitimate HMRC-allowable business cost
+    with a receipt reference and business justification before approving.
+    """
+    app = _get_app()
+    result = app.tax.log_expense(
+        date_str=req.date,
+        category=req.category,
+        amount_pence=req.amount_pence,
+        description=req.description,
+        receipt_ref=req.receipt_ref,
+        justification=req.justification,
+    )
+    status_code = 200 if result["approved"] else 400
+    return JSONResponse(result, status_code=status_code)
+
+
+@server.get("/tax-compliance/efficiency", tags=["tax"])
+def tax_efficiency() -> JSONResponse:
+    """Tax efficiency recommendations: trading allowance vs. itemised, pension, equipment allowance."""
+    app = _get_app()
+    expenses_comparison = app.tax.allowable_expenses_vs_allowance()
+    vat = app.tax.vat_threshold_forecast()
+    incorporation = app.tax.incorporation_analysis()
+    gross = app.store.gross_revenue()
+
+    recommendations = []
+
+    # Trading allowance vs. itemised
+    rec = expenses_comparison["recommendation"]
+    if rec == "itemised_expenses":
+        saving = expenses_comparison["additional_saving_gbp"]
+        recommendations.append(
+            f"Claim itemised expenses instead of trading allowance to save an additional {saving} in tax."
+        )
+    else:
+        recommendations.append(
+            "Use the £1,000 trading allowance — it saves more tax than your current itemised expenses."
+        )
+
+    # Pension
+    if gross > 1_257_000:  # above personal allowance
+        recommendations.append(
+            "Consider personal pension contributions — 100% tax-deductible, "
+            "reduces taxable profit pound-for-pound at your marginal rate."
+        )
+
+    # Equipment allowance
+    recommendations.append(
+        "Any equipment or software purchases qualify for 100% Annual Investment Allowance "
+        "(AIA limit £1,000,000) — fully deductible in year of purchase."
+    )
+
+    # Home office
+    recommendations.append(
+        "If working from home, claim 10% of rent/mortgage interest as home office expense."
+    )
+
+    # Incorporation
+    if incorporation["recommend_incorporation"]:
+        saving = incorporation["estimated_annual_saving_gbp"]
+        recommendations.append(
+            f"Consider limited company incorporation: estimated annual tax saving of {saving}. "
+            "Seek professional advice before proceeding."
+        )
+
+    # VAT FRS
+    if vat["vat_registration_mandatory"] and vat["flat_rate_scheme_eligible"]:
+        recommendations.append(
+            "VAT registration mandatory. Register for VAT Flat Rate Scheme (16.5%) to simplify "
+            "accounting and potentially reduce VAT liability."
+        )
+
+    return JSONResponse(
+        {
+            "recommendations": recommendations,
+            "expenses_comparison": expenses_comparison,
+            "vat_summary": {
+                "mandatory": vat["vat_registration_mandatory"],
+                "flat_rate_eligible": vat["flat_rate_scheme_eligible"],
+                "threshold_pct_used": vat["threshold_pct_used"],
+            },
+            "incorporation_summary": {
+                "recommend": incorporation["recommend_incorporation"],
+                "note": incorporation["note"],
+            },
+        }
+    )
+
+
+@server.get("/tax-compliance/vat-forecast", tags=["tax"])
+def tax_vat_forecast() -> JSONResponse:
+    """Progress to £90,000 VAT registration threshold and Flat Rate Scheme eligibility."""
+    app = _get_app()
+    return JSONResponse(app.tax.vat_threshold_forecast())
+
+
+@server.get("/tax-compliance/audit-trail", tags=["tax"])
+def tax_audit_trail() -> JSONResponse:
+    """Complete audit trail of all tax-related decisions, expense approvals, and calculations."""
+    app = _get_app()
+    rows = app.store.db.execute(
+        "SELECT ts, agent, action, payload FROM audit ORDER BY ts DESC LIMIT 500"
+    ).fetchall()
+    entries = [
+        {
+            "timestamp": row["ts"],
+            "agent": row["agent"],
+            "action": row["action"],
+            "payload": row["payload"],
+        }
+        for row in rows
+    ]
+    return JSONResponse({"audit_trail": entries, "count": len(entries)})

@@ -42,3 +42,16 @@ class ImprovementProposal:
     baseline: float
     candidate: float
     status: str
+
+@dataclass
+class ExpenseLog:
+    id: str
+    date: str
+    category: str          # home_office | software | hosting | domain | marketing | professional_dev | equipment
+    amount_pence: int
+    description: str
+    receipt_ref: str       # receipt identifier or URL
+    justification: str
+    approved_by: str       # K-2SO
+    approved: bool
+    created_at: str
