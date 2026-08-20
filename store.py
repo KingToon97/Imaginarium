@@ -231,6 +231,15 @@ class Store:
             ).fetchall()
         ]
 
+    def list_audit_trail(self, limit: int = 500) -> list[dict[str, Any]]:
+        return [
+            dict(row)
+            for row in self.db.execute(
+                "SELECT ts, agent, action, payload FROM audit ORDER BY ts DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        ]
+
     def reward_events(self) -> list[dict[str, Any]]:
         return [
             dict(row)

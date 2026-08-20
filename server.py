@@ -35,11 +35,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .app import Imaginarium
+from .tax_compliance import PERSONAL_ALLOWANCE_PENCE
 
 TRADING_ALLOWANCE_PENCE = 100_000
 VAT_REGISTRATION_THRESHOLD_PENCE = 9_000_000
-# UK personal allowance in pence for the current default estimate path.
-PERSONAL_ALLOWANCE_PENCE = 1_257_000
 
 # ---------------------------------------------------------------------------
 # App state
@@ -720,7 +719,7 @@ def tax_efficiency() -> JSONResponse:
         )
 
     # Pension
-    if gross > 1_257_000:  # above personal allowance
+    if gross > PERSONAL_ALLOWANCE_PENCE:
         recommendations.append(
             "Consider personal pension contributions — 100% tax-deductible, "
             "reduces taxable profit pound-for-pound at your marginal rate."
@@ -780,9 +779,7 @@ def tax_vat_forecast() -> JSONResponse:
 def tax_audit_trail() -> JSONResponse:
     """Complete audit trail of all tax-related decisions, expense approvals, and calculations."""
     app = _get_app()
-    rows = app.store.db.execute(
-        "SELECT ts, agent, action, payload FROM audit ORDER BY ts DESC LIMIT 500"
-    ).fetchall()
+    rows = app.store.list_audit_trail(limit=500)
     entries = [
         {
             "timestamp": row["ts"],
