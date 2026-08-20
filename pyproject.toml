@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["httpx>=0.27.0"]
+dev = ["httpx2>=2.0.0"]
 
 [tool.setuptools]
 package-dir = {"imaginarium" = "."}
