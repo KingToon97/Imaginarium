@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.env
+.venv/
+venv/
+runtime/
+imaginarium_runtime/
+*.db
+*.db-shm
+*.db-wal
+.git/
+.github/
