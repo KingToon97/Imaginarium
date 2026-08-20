@@ -1,15 +1,15 @@
 from __future__ import annotations
 import json, os
-from .store import Store
-from .authority import AuthorityPolicy
-from .hydra import HydraProtocol
-from .morale import MoraleSystem
-from .self_improvement import SelfImprovementManager
-from .treasury import TreasuryPolicy
-from .tax_compliance import TaxCompliance
-from .agents.house import MrHouse
-from .agents.specialists import HAL, Cortana, GLaDOS, WALL_E, MrData, HK47, R2D2, Johnny5, TARS, K2SO, Skynet
-from .pipeline import BusinessPipeline
+from store import Store
+from authority import AuthorityPolicy
+from hydra import HydraProtocol
+from morale import MoraleSystem
+from self_improvement import SelfImprovementManager
+from treasury import TreasuryPolicy
+from tax_compliance import TaxCompliance
+from agents.house import MrHouse
+from agents.specialists import HAL, Cortana, GLaDOS, WALL_E, MrData, HK47, R2D2, Johnny5, TARS, K2SO, Skynet
+from pipeline import BusinessPipeline
 
 class Imaginarium:
     def __init__(self, home=None):
