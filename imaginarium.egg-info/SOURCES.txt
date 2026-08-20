@@ -25,6 +25,8 @@ treasury.py
 ./_legacy.py
 ./app.py
 ./authority.py
+./dashboard.py
+./dashboard_data.py
 ./hydra.py
 ./laws.py
 ./local.py
