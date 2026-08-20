@@ -76,7 +76,7 @@ jobs:
       - name: Deploy to Heroku
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
-          heroku container:login --api-key=${{ secrets.HEROKU_API_KEY }}
+          heroku container:login
           heroku container:push web -a my-imaginarium
           heroku container:release web -a my-imaginarium
         env:
