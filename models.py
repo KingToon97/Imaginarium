@@ -43,6 +43,7 @@ class ImprovementProposal:
     candidate: float
     status: str
 
+
 @dataclass
 class ExpenseLog:
     id: str

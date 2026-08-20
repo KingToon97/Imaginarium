@@ -55,6 +55,11 @@ uvicorn imaginarium.server:server --reload
 | `/healthz` | GET | Liveness probe |
 | `/status` | GET | Treasury balance + agent roster |
 | `/execute` | POST | Run an idea through the full pipeline |
+| `/api/v1/revenue/summary` | GET | Dashboard KPI, milestone, tax, and financial health summary |
+| `/api/v1/revenue/products` | GET | Product performance breakdown |
+| `/api/v1/revenue/forecast` | GET | Revenue projections and milestone ETAs |
+| `/api/v1/agents/roster` | GET | Agent morale, activity, and roster metrics |
+| `/api/v1/activity/feed` | GET | Recent dashboard activity feed |
 | `/docs` | GET | Interactive Swagger UI |
 
 Example request:
@@ -148,3 +153,13 @@ python -m unittest discover -s . -p "test_*.py" -v
 
 CI runs automatically on every push via `.github/workflows/test.yml`.
 
+## Streamlit dashboard
+
+Install dashboard dependencies and run the monitoring UI:
+
+```bash
+pip install -r requirements.txt
+streamlit run dashboard.py
+```
+
+The dashboard reads `IMAGINARIUM_API_URL` (or `api_url` from Streamlit secrets) and polls the FastAPI service every 30 seconds for revenue KPIs, milestone progress, HMRC-oriented tax guidance, product analytics, agent morale, and recent activity.
