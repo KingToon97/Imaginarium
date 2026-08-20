@@ -102,10 +102,43 @@ Key environment variables:
 | `IMAGINARIUM_HOME` | `./runtime` | Database and artefact storage path |
 | `IMAGINARIUM_PRIMARY_NAME` | `Primary Operator` | Authority name in audit logs |
 | `IMAGINARIUM_REINVESTMENT_RATE` | `0.25` | Fraction of profit available for reinvestment |
+| `IMAGINARIUM_TAX_YEAR_START` | `2024-04-06` | UK tax year start date (update each April) |
 | `STRIPE_SECRET_KEY` | *(unset)* | Enable real Stripe payment links |
 | `OLLAMA_HOST` | *(unset)* | Enable local LLM reasoning via Ollama |
 
 Do not commit `.env` or secrets.
+
+## HMRC Tax Compliance
+
+Imaginarium includes a full HMRC tax compliance module for UK sole traders. It tracks gross revenue
+against HMRC thresholds, forecasts Self Assessment obligations, logs allowable expenses with
+K-2SO approval, and recommends legitimate tax efficiency strategies.
+
+### Tax Phases
+
+| Phase | Revenue | Position |
+|---|---|---|
+| 1 | £0 – £1,000 | Tax-free trading allowance; no filing required |
+| 2 | £1,001 – £12,570 | Self Assessment required; usually no tax due after personal allowance |
+| 3 | £12,571 – £50,270 | 20% income tax + Class 2/4 NI; maximise allowable expenses and pension |
+| 4 | £50,271+ | Consider limited company incorporation for efficiency |
+
+VAT registration is mandatory if turnover exceeds £90,000 in any 12-month period.
+The VAT Flat Rate Scheme (16.5%) is available for eligible businesses below £150,000 turnover.
+
+### Tax API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/tax-status` | GET | Current tax position, phase, alerts |
+| `/tax-compliance/forecast` | GET | Self Assessment forecast and deadlines |
+| `/tax-compliance/expenses` | GET | Approved expenses by category |
+| `/tax-compliance/log-expense` | POST | K-2SO authorised expense logging |
+| `/tax-compliance/efficiency` | GET | Tax efficiency recommendations |
+| `/tax-compliance/vat-forecast` | GET | VAT threshold progress and FRS eligibility |
+| `/tax-compliance/audit-trail` | GET | Complete tax audit trail |
+
+See [TAX_GUIDE.md](TAX_GUIDE.md) for the full tier-by-tier tax strategy documentation.
 
 ## Test
 
