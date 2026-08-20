@@ -164,3 +164,4 @@ streamlit run dashboard.py
 
 The dashboard reads `IMAGINARIUM_API_URL` (or `api_url` from Streamlit secrets) and polls the FastAPI service every 30 seconds for revenue KPIs, milestone progress, HMRC-oriented tax guidance, product analytics, agent morale, and recent activity.
 deployed.
+2
