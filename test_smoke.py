@@ -1,4 +1,5 @@
 """Smoke tests verifying importability and basic app execution."""
+from datetime import datetime, timedelta, timezone
 import tempfile
 import unittest
 
@@ -74,11 +75,12 @@ class ServerSmokeTests(unittest.TestCase):
         self._env_patch.start()
 
         from fastapi.testclient import TestClient
-        from imaginarium.server import server
+        from imaginarium.server import _get_app, server
 
         # Enter client context so lifespan runs for the duration of each test
         self._client_ctx = TestClient(server)
         self.client = self._client_ctx.__enter__()
+        self.runtime = _get_app()
 
     def tearDown(self):
         self._client_ctx.__exit__(None, None, None)
@@ -113,6 +115,56 @@ class ServerSmokeTests(unittest.TestCase):
         r = self.client.post("/execute", json=payload)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "live")
+
+    def test_dashboard_endpoints(self):
+        payload = {
+            "title": "Revenue Dashboard Template",
+            "description": "An original dashboard template for finance tracking.",
+            "channel": "local storefront",
+            "expected_revenue_pence": 1_500,
+            "expected_cost_pence": 0,
+            "vulnerability_risk": "low",
+            "legal_confidence": 0.99,
+            "customer_value": 0.9,
+            "probability_of_sale": 0.25,
+            "hours_to_launch": 1.0,
+        }
+        created = self.client.post("/execute", json=payload)
+        self.assertEqual(created.status_code, 200)
+        proposal_id = created.json()["proposal"]
+        now = datetime.now(timezone.utc)
+        last_month = now - timedelta(days=32)
+        self.runtime.store.record_sale(proposal_id, gross_pence=1_500, fee_pence=150)
+        self.runtime.store.record_sale(proposal_id, gross_pence=1_000, fee_pence=100, ts=last_month)
+        self.runtime.store.book_expense(200, "Approved marketing spend")
+
+        summary = self.client.get("/api/v1/revenue/summary")
+        self.assertEqual(summary.status_code, 200)
+        summary_data = summary.json()
+        self.assertEqual(summary_data["current_balance_pence"], 2_050)
+        self.assertEqual(summary_data["revenue"]["today_net_pence"], 1_350)
+        self.assertEqual(summary_data["tax"]["deduction_strategy"], "trading_allowance")
+        self.assertTrue(summary_data["milestones"])
+
+        products = self.client.get("/api/v1/revenue/products")
+        self.assertEqual(products.status_code, 200)
+        product_data = products.json()["products"][0]
+        self.assertEqual(product_data["product_name"], "Revenue Dashboard Template")
+        self.assertEqual(product_data["sales_count_all_time"], 2)
+
+        forecast = self.client.get("/api/v1/revenue/forecast")
+        self.assertEqual(forecast.status_code, 200)
+        self.assertIn("projections", forecast.json())
+
+        agents = self.client.get("/api/v1/agents/roster")
+        self.assertEqual(agents.status_code, 200)
+        agents_data = agents.json()
+        self.assertIn("agents", agents_data)
+        self.assertIn("morale_trend", agents_data)
+
+        activity = self.client.get("/api/v1/activity/feed", params={"event_type": "sales"})
+        self.assertEqual(activity.status_code, 200)
+        self.assertTrue(activity.json()["items"])
 
 
 if __name__ == "__main__":
