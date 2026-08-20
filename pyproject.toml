@@ -1,0 +1,9 @@
+[project]
+name = "imaginarium"
+version = "3.2.0"
+description = "Bounded autonomous multi-agent business scaffold"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+include = ["imaginarium*"]
