@@ -1,7 +1,7 @@
 from __future__ import annotations
-from imaginarium.core.laws import verify_core_integrity
-from imaginarium.core.morale import MoraleSystem
-from imaginarium.core.treasury import TreasuryPolicy
+from .laws import verify_core_integrity
+from .morale import MoraleSystem
+from .treasury import TreasuryPolicy
 
 class BusinessPipeline:
     def __init__(self, company): self.company=company

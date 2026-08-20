@@ -1,6 +1,6 @@
 import tempfile, unittest
 from imaginarium.app import Imaginarium
-from imaginarium.core.laws import verify_core_integrity
+from imaginarium.laws import verify_core_integrity
 
 class CoreTests(unittest.TestCase):
     def setUp(self):
