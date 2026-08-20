@@ -12,8 +12,12 @@ morale.py
 pipeline.py
 pyproject.toml
 self_improvement.py
+server.py
 store.py
+tax_compliance.py
 test_core.py
+test_smoke.py
+test_tax_compliance.py
 test_treasury.py
 treasury.py
 ./__init__.py
@@ -30,8 +34,10 @@ treasury.py
 ./self_improvement.py
 ./server.py
 ./store.py
+./tax_compliance.py
 ./test_core.py
 ./test_smoke.py
+./test_tax_compliance.py
 ./test_treasury.py
 ./treasury.py
 ./agents/__init__.py
