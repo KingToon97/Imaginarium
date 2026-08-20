@@ -1,0 +1,18 @@
+services:
+  imaginarium:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - imaginarium_data:/data
+    environment:
+      - IMAGINARIUM_HOME=/data
+      - IMAGINARIUM_PRIMARY_NAME=${IMAGINARIUM_PRIMARY_NAME:-Primary Operator}
+      - IMAGINARIUM_REINVESTMENT_RATE=${IMAGINARIUM_REINVESTMENT_RATE:-0.25}
+      # Optional — leave unset to disable Stripe integration
+      # - STRIPE_SECRET_KEY=sk_live_...
+      # - STRIPE_WEBHOOK_SECRET=whsec_...
+    restart: unless-stopped
+
+volumes:
+  imaginarium_data:

@@ -11,7 +11,7 @@ class Store:
         root.mkdir(parents=True, exist_ok=True)
         self.root = root
         self.db_path = root / "imaginarium.db"
-        self.db = sqlite3.connect(self.db_path)
+        self.db = sqlite3.connect(self.db_path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.db.executescript("""
         CREATE TABLE IF NOT EXISTS agents(
@@ -70,6 +70,14 @@ class Store:
         self.db.execute("INSERT INTO rewards(ts,agent_id,points,reason,reward) VALUES(?,?,?,?,?)",
                         (datetime.now(timezone.utc).isoformat(), agent_id, points, reason, reward))
         self.db.commit(); self.log("SYSTEM", "reward", {"agent_id":agent_id,"points":points,"reason":reason,"reward":reward})
+
+    def agents(self) -> list[dict[str, Any]]:
+        return [
+            dict(row)
+            for row in self.db.execute(
+                "SELECT agent_id, display_name, role, generation, status, morale FROM agents ORDER BY display_name"
+            ).fetchall()
+        ]
 
     def balance(self) -> int:
         row = self.db.execute("SELECT COALESCE(SUM(amount_pence),0) AS b FROM ledger").fetchone()
