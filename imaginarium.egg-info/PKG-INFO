@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: imaginarium
+Version: 3.2.0
+Summary: Bounded autonomous multi-agent business scaffold
+Requires-Python: >=3.11
